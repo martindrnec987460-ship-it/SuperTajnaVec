@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pro Kateřinu Kozákovou ❤️</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      overflow:hidden;
+      color:#fff;
+      background:
+        radial-gradient(circle at 20% 20%, #ff8fb3, transparent 40%),
+        radial-gradient(circle at 80% 10%, #ff6b8b, transparent 35%),
+        radial-gradient(circle at 60% 80%, #ff99cc, transparent 45%),
+        linear-gradient(135deg, #ff4d6d, #ff85a1);
+    }
+
+    .card{
+      width:min(92vw, 680px);
+      padding: 30px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      text-align:center;
+      z-index:2;
+    }
+
+    h1{
+      font-size: clamp(28px, 6vw, 52px);
+      margin-bottom: 10px;
+      line-height:1.1;
+    }
+
+    .sub{
+      font-size: clamp(14px, 3.5vw, 18px);
+      opacity: 0.9;
+      margin-bottom: 25px;
+    }
+
+    .buttons{
+      position: relative;
+      height: 140px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap: 14px;
+    }
+
+    button{
+      border:none;
+      border-radius:999px;
+      padding:14px 26px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight:700;
+      cursor:pointer;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.2);
+    }
+
+    #yes{ background:#22c55e; color:#fff; }
+    #no{
+      background:#ef4444;
+      color:#fff;
+      position:relative;
+      touch-action:none;
+    }
+
+    #result{
+      display:none;
+      font-size: clamp(22px, 5vw, 38px);
+      font-weight:800;
+      line-height:1.25;
+    }
+
+    canvas{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="hearts"></canvas>
+
+<div class="card">
+  <h1 id="question">Kateřino Kozáková</h1>
+  <h2 id="question2">Budeš můj valentýn? 💖</h2>
+  <div class="sub" id="hint">Vyber správně… (tlačítko „Ne“ je trochu plaché 😅)</div>
+
+  <div class="buttons" id="buttons">
+    <button id="yes">Ano</button>
+    <button id="no">Ne</button>
+  </div>
+
+  <div id="result">
+    Věděl jsem, že klikneš na ANO!<br>
+    Správná žena totiž ví, že nejdu odmítnout. ❤️
+        <p id="result2">Budu se těšit na náš společný glamping bobíku. 🥹</p>
+  </div>
+</div>
+
+<script>
+  // ====== TLAČÍTKO NE – UHÝBÁ, ALE ZŮSTÁVÁ NA OBRAZOVCE ======
+  const noBtn = document.getElementById("no");
+  let offsetX = 0, offsetY = 0;
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  function moveAway(x, y){
+    const r = noBtn.getBoundingClientRect();
+    let dx = (r.left + r.width/2) - x;
+    let dy = (r.top + r.height/2) - y;
+    const len = Math.hypot(dx,dy) || 1;
+    dx/=len; dy/=len;
+
+    offsetX += dx * 80;
+    offsetY += dy * 80;
+
+    const margin = 10;
+    offsetX = clamp(offsetX, -r.left + margin, window.innerWidth - r.right - margin);
+    offsetY = clamp(offsetY, -r.top + margin, window.innerHeight - r.bottom - margin);
+
+    noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  }
+
+  noBtn.addEventListener("mouseenter", e => moveAway(e.clientX, e.clientY));
+  noBtn.addEventListener("mousemove", e => moveAway(e.clientX, e.clientY));
+  noBtn.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    moveAway(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive:false });
+
+  // ====== ANO ======
+  document.getElementById("yes").onclick = () => {
+    document.getElementById("question").style.display = "none";
+    document.getElementById("question2").style.display = "none";
+    document.getElementById("hint").style.display = "none";
+    document.getElementById("buttons").style.display = "none";
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result2").style.display = "block";
+    burst();
+  };
+
+  // ====== PADAJÍCÍ SRDÍČKA ======
+  const c = document.getElementById("hearts");
+  const ctx = c.getContext("2d");
+  const hearts = [];
+
+  function resize(){
+    c.width = innerWidth;
+    c.height = innerHeight;
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  function spawn(x=Math.random()*innerWidth,y=-20){
+    hearts.push({x,y,s:Math.random()*10+10,v:Math.random()*1.5+1});
+  }
+
+  for(let i=0;i<40;i++) spawn(Math.random()*innerWidth, Math.random()*innerHeight);
+
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    hearts.forEach((h,i)=>{
+      h.y+=h.v;
+      ctx.font = `${h.s}px serif`;
+      ctx.fillText("❤️", h.x, h.y);
+      if(h.y>innerHeight+20){ hearts.splice(i,1); spawn(); }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  function burst(){
+    for(let i=0;i<15;i++) spawn(innerWidth/2, innerHeight/2);
+  }
+</script>
+
+</body>
+</html>
